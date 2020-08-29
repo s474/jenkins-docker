@@ -1,0 +1,48 @@
+version: '3.2'
+
+services:
+
+  docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs   
+    ports:
+      - 2376:2376
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home                   
+    networks:
+      jenkins:
+        aliases:
+          - docker      
+
+  jenkins:
+    build: 
+        context: .
+        dockerfile: Dockerfile-jenkins        
+    container_name: jenkins-blueocean
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1         
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - jenkins-docker-certs:/certs/client:ro
+      - jenkins-data:/var/jenkins_home
+      #- ~/.ssh:/root/.ssh 
+    networks:
+      - jenkins
+      
+networks:  
+  jenkins:
+    driver: "bridge"
+
+volumes:
+  jenkins-docker-certs:
+    external: true
+  jenkins-data:
+    external: true    
